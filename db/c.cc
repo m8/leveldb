@@ -19,6 +19,10 @@
 #include "leveldb/status.h"
 #include "leveldb/write_batch.h"
 
+// Added for yields
+ucontext_t * _worker_context;
+ucontext_t * _main_context;
+
 using leveldb::Cache;
 using leveldb::Comparator;
 using leveldb::CompressionType;
@@ -85,6 +89,13 @@ struct leveldb_logger_t {
 struct leveldb_filelock_t {
   FileLock* rep;
 };
+
+// Added for yields
+void leveldb_setcontext(ucontext_t * wcontext, ucontext_t * mcontext)
+{
+  _worker_context = wcontext;
+  _main_context = mcontext;
+} 
 
 struct leveldb_comparator_t : public Comparator {
   ~leveldb_comparator_t() override { (*destructor_)(state_); }

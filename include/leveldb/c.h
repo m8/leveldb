@@ -43,6 +43,7 @@
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <ucontext.h>
 
 #include "leveldb/export.h"
 
@@ -68,6 +69,9 @@ typedef struct leveldb_snapshot_t leveldb_snapshot_t;
 typedef struct leveldb_writablefile_t leveldb_writablefile_t;
 typedef struct leveldb_writebatch_t leveldb_writebatch_t;
 typedef struct leveldb_writeoptions_t leveldb_writeoptions_t;
+
+/* Yield Operations */
+LEVELDB_EXPORT void leveldb_setcontext(ucontext_t * wcontext, ucontext_t * mcontext);
 
 /* DB operations */
 

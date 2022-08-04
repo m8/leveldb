@@ -1,6 +1,7 @@
 // Copyright (c) 2011 The LevelDB Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
+#include <ucontext.h>
 
 #include "db/db_iter.h"
 
@@ -13,6 +14,73 @@
 #include "util/logging.h"
 #include "util/mutexlock.h"
 #include "util/random.h"
+
+extern ucontext_t * _worker_context;
+extern ucontext_t * _main_context;
+
+
+int leveldb_swapcontext_fast(ucontext_t *ouctx, ucontext_t *ucp)
+{
+    __asm__ __volatile__("mov %0, %%rdi\n" :: "a" (_worker_context));
+    __asm__ __volatile__("mov %0, %%rsi\n":: "a" (_main_context));
+
+    asm volatile (
+        // Save the preserved registers, the registers used for passing args,
+        // and the return address.
+        "movq   %rbx, 0x80(%rdi)\n"
+        "movq   %rbp, 0x78(%rdi)\n"
+        "movq   %r12, 0x48(%rdi)\n"
+        "movq   %r13, 0x50(%rdi)\n"
+        "movq   %r14, 0x58(%rdi)\n"
+        "movq   %r15, 0x60(%rdi)\n"
+        "movq   %rdi, 0x68(%rdi)\n"
+        "movq   %rsi, 0x70(%rdi)\n"
+        "movq   %rdx, 0x88(%rdi)\n"
+        "movq   %rcx, 0x98(%rdi)\n"
+        "movq   %r8, 0x28(%rdi)\n"
+        "movq   %r9, 0x30(%rdi)\n"
+        "movq   (%rsp), %rcx\n"
+        "movq   %rcx, 0xa8(%rdi)\n"
+        "leaq   8(%rsp), %rcx\n"        // Exclude the return address.
+        "movq   %rcx, 0xa0(%rdi)\n"
+        // We have separate floating-point register content memory on the
+        //   stack.  We use the __fpregs_mem block in the context.  Set the
+        //   links up correctly.
+        "leaq   0x1a8(%rdi), %rcx\n"
+        "movq   %rcx, 0xe0(%rdi)\n"
+        // Save the floating-point environment.
+        "fnstenv    (%rcx)\n"
+        "stmxcsr 0x1c0(%rdi)\n"
+        // Restore the floating-point context.  Not the registers, only the
+        // rest.
+        "movq   0xe0(%rsi), %rcx\n"
+
+        // Load the new stack pointer and the preserved registers.
+        "movq   0xa0(%rsi), %rsp\n"
+        "movq   0x80(%rsi), %rbx\n"
+        "movq   0x78(%rsi), %rbp\n"
+        "movq   0x48(%rsi), %r12\n"
+        "movq   0x50(%rsi), %r13\n"
+        "movq   0x58(%rsi), %r14\n"
+        "movq   0x60(%rsi), %r15\n"
+        // The following ret should return to the address set with
+        // getcontext.  Therefore push the address on the stack.
+        "movq   0xa8(%rsi), %rcx\n"
+        "pushq  %rcx\n"
+        // Setup registers used for passing args.
+        "movq   0x68(%rsi), %rdi\n"
+        "movq   0x88(%rsi), %rdx\n"
+        "movq   0x98(%rsi), %rcx\n"
+        "movq   0x28(%rsi), %r8\n"
+        "movq   0x30(%rsi), %r9\n"
+		    // Setup finally  %rsi.
+        "movq   0x70(%rsi), %rsi\n"
+        // Clear rax to indicate success.
+        "xorl   %eax, %eax\n"
+        "ret \n"
+    );
+    return 0;
+}
 
 namespace leveldb {
 
@@ -178,7 +246,19 @@ void DBIter::FindNextUserEntry(bool skipping, std::string* skip) {
   // Loop until we hit an acceptable entry to yield
   assert(iter_->Valid());
   assert(direction_ == kForward);
+
+  int internal_yield_counter = 0;
+
   do {
+
+    if(internal_yield_counter == 70)
+    {
+      internal_yield_counter = 0;
+      leveldb_swapcontext_fast(_worker_context, _main_context);
+    }
+
+    internal_yield_counter ++;
+
     ParsedInternalKey ikey;
     if (ParseKey(&ikey) && ikey.sequence <= sequence_) {
       switch (ikey.type) {
