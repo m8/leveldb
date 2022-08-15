@@ -4,14 +4,16 @@ DB_FOLDER := builder c dbformat db_impl db_iter filename log_reader log_writer m
 TABLE_FOLDER := block_builder block filter_block format iterator merger table_builder table two_level_iterator
 UTIL_FOLDER := arena bloom cache coding comparator crc32c env env_posix filter_policy hash histogram logging options status
 BUILD_DIR := llvmbuild
-OBJS = $(shell find ./llvmbuild -name '*.bc')
 
 
-build-bit-code:
+all: build_db  build_util build_table build-bit-code create-obj
+	
+build-bit-code: 
 	llvm-link-10 -o libleveldb.bc llvmbuild/*.bc
 
-all: build_db  build_util build_table $(OBJS)
-	
+create-obj: 
+	llc-10 -filetype=obj libleveldb.bc -o libleveldb.a
+	rm libleveldb.bc
 
 build_db:
 	for file in $(DB_FOLDER); do \
