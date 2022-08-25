@@ -1,19 +1,21 @@
-CXX := clang++-10 -stdlib=libc++ -Xclang -load -Xclang /home/musa/llvm-pass/llvm-pass-yield/build/yield/libYieldPass.so
-CXX_FLAGS := -emit-llvm -I. -I./include -pthread -DOS_LINUX -DLEVELDB_PLATFORM_POSIX -DSNAPPY -DNDEBUG -c 
+CXX := clang++-10 -stdlib=libc++ -Xclang -load -Xclang /home/musa/code-analyzer/loop-pass/build/yield/libYieldPass.so
+CXX_FLAGS := -emit-llvm -O3 -I. -I./include -pthread -DOS_LINUX -DLEVELDB_PLATFORM_POSIX -DSNAPPY -c 
 DB_FOLDER := builder c dbformat db_impl db_iter filename log_reader log_writer memtable repair table_cache version_edit version_set write_batch
 TABLE_FOLDER := block_builder block filter_block format iterator merger table_builder table two_level_iterator
 UTIL_FOLDER := arena bloom cache coding comparator crc32c env env_posix filter_policy hash histogram logging options status
 BUILD_DIR := llvmbuild
 
-
-all: build_db  build_util build_table build-bit-code create-obj
+all: clean build_db  build_util build_table 
+	llvm-link-10 -o libleveldb.bc llvmbuild/*.bc 
+	llc-10 -filetype=obj libleveldb.bc -o libleveldb.a
+	llvm-dis-10 libleveldb.bc -o leveldb.dis
 	
 build-bit-code: 
 	llvm-link-10 -o libleveldb.bc llvmbuild/*.bc
 
 create-obj: 
 	llc-10 -filetype=obj libleveldb.bc -o libleveldb.a
-	rm libleveldb.bc
+	llvm-dis-10 libleveldb.bc -o leveldb.dis
 
 build_db:
 	for file in $(DB_FOLDER); do \
