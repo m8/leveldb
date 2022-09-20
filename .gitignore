@@ -6,3 +6,8 @@
 # Build directory.
 build/
 out/
+
+llvmbuild/
+*.a
+*.ll
+*.bc
