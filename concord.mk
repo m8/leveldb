@@ -8,7 +8,7 @@ LLVM_CONFIG = llvm-config-9
 LLVM_LINK = llvm-link-9
 OPT = opt-9
 
-CXX := clang++-9 -stdlib=libc++ -fPIC
+CXX := clang++-9 -fPIC
 CXX_FLAGS := -emit-llvm -g -S -O3 -I. -I./include -pthread -DOS_LINUX -DLEVELDB_PLATFORM_POSIX -DSNAPPY  -c 
 
 ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
@@ -31,25 +31,25 @@ concord_pass:
 	llvm-dis-9 libleveldb.bc -o leveldb.ll
 	$(OPT) -S $(OPT_CONFIG) < leveldb.ll > leveldb.opt.ll
 	$(OPT) -S -load $(CONCORD_PASS) -yield < leveldb.opt.ll > concord_leveldb.opt.ll
-	$(CXX) -std=c++11 -c -O3 concord_leveldb.opt.ll -o concord_libleveldb.a
+	$(CXX) -c -O3 concord_leveldb.opt.ll -o concord_libleveldb.a
 
 build_db:
 	@mkdir -p $(BUILD_DIR)
 	for file in $(DB_FOLDER); do \
 		$(CXX) $(CXX_FLAGS) db/$$file.cc -o $(BUILD_DIR)/$$file.bc; \
-		clang++-9 -std=c++11 -c $(BUILD_DIR)/$$file.bc -o $(BUILD_DIR)/$$file.o; \
+		clang++-9 -c $(BUILD_DIR)/$$file.bc -o $(BUILD_DIR)/$$file.o; \
 	done
 
 build_util:
 	for file in $(UTIL_FOLDER); do \
 		$(CXX) $(CXX_FLAGS) util/$$file.cc -o $(BUILD_DIR)/$$file.bc; \
-		clang++-9 -std=c++11 -c $(BUILD_DIR)/$$file.bc -o $(BUILD_DIR)/$$file.o; \
+		clang++-9 -c $(BUILD_DIR)/$$file.bc -o $(BUILD_DIR)/$$file.o; \
 	done
 
 build_table:
 	for file in $(TABLE_FOLDER); do \
 		$(CXX) $(CXX_FLAGS) table/$$file.cc -o $(BUILD_DIR)/$$file.bc; \
-		clang++-9 -std=c++11 -c $(BUILD_DIR)/$$file.bc -o $(BUILD_DIR)/$$file.o; \
+		clang++-9 -c $(BUILD_DIR)/$$file.bc -o $(BUILD_DIR)/$$file.o; \
 	done
 
 clean:
