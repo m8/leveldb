@@ -32,6 +32,8 @@ concord_pass:
 	$(OPT) -S $(OPT_CONFIG) < leveldb.ll > leveldb.opt.ll
 	$(OPT) -S -load $(CONCORD_PASS) -yield < leveldb.opt.ll > concord_leveldb.opt.ll
 	$(CXX) -c -O3 concord_leveldb.opt.ll -o concord_libleveldb.a
+	$(CXX) -c -O3 leveldb.opt.ll -o concord_libleveldb_clear.a
+
 
 build_db:
 	@mkdir -p $(BUILD_DIR)
