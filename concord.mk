@@ -34,7 +34,6 @@ concord_pass:
 	$(CXX) -c -O3 concord_leveldb.opt.ll -o concord_libleveldb.a
 	$(CXX) -c -O3 leveldb.opt.ll -o concord_libleveldb_clear.a
 
-
 build_db:
 	@mkdir -p $(BUILD_DIR)
 	for file in $(DB_FOLDER); do \
