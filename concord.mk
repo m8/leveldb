@@ -9,7 +9,7 @@ LLVM_LINK = llvm-link-9
 OPT = opt-9
 
 CXX := clang++-9 -fPIC
-CXX_FLAGS := -stdlib=libc++ -emit-llvm -g -S -O3 -I. -I./include -pthread -DOS_LINUX -DLEVELDB_PLATFORM_POSIX -DSNAPPY  -c 
+CXX_FLAGS := -emit-llvm -g -S -O3 -I. -I./include -pthread -DOS_LINUX -DLEVELDB_PLATFORM_POSIX -DSNAPPY  -c 
 
 ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
