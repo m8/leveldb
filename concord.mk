@@ -15,7 +15,7 @@ ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
 CONCORD_MAIN=$(ROOT_DIR)/../../../src
 
-CONCORD_PASS=$(CONCORD_MAIN)/pass/build/src/libConcordPass.so
+CONCORD_PASS=$(CONCORD_MAIN)/cache-line-pass/build/src/libConcordPass.so
 RDTSC_PASS=$(CONCORD_MAIN)/rdtsc-pass/build/src/libConcordPass.so
 CONCORD_DIR=$(CONCORD_MAIN)/lib/
 INC_DIR=-I$(CONCORD_DIR)
